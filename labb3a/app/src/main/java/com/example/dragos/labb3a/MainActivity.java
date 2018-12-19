@@ -6,6 +6,9 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.Display;
+import android.view.Surface;
+import android.view.WindowManager;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -13,45 +16,81 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     private SensorManager manager;
     private double x,y,z;
-    private double preX,preY;
-    private TextView textX,textY;
+    private double preX,preY,preZ;
+    private TextView textX,textY,textZ;
+    private Display display;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        display = ((WindowManager) getSystemService(this.WINDOW_SERVICE)).getDefaultDisplay();
+
         textX=(TextView) findViewById(R.id.outputX);
-        textY=(TextView) findViewById(R.id.outputY);
+       // textY=(TextView) findViewById(R.id.outputY);
+        //textZ=(TextView) findViewById(R.id.outputZ);
 
         manager=(SensorManager) getSystemService(SENSOR_SERVICE);
         manager.registerListener(this,manager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),10000);
     }
 
-    private void filterData(double x,double y){
-        float kFilteringFactor = 0.01f;
-        double Xvalue = (x*kFilteringFactor)+(preX*(1.0-kFilteringFactor));
+    private void filterData(double x,double y,double z){
+        float faktor = 0.01f;
+        double Xvalue = (x*faktor)+(preX*(1.0-faktor));
         preX=Xvalue;
         double testX=preX*9.56;
-        int test=(int) Math.round(testX);
+        int outX=(int) Math.round(testX);
 
-        double Yvalue = (y*kFilteringFactor)+(preY*(1.0-kFilteringFactor));
+        double Yvalue = (y*faktor)+(preY*(1.0-faktor));
         preY=Yvalue;
+        double testY=preY*9.56;
+        int outY=(int) Math.round(testY);
 
+        double Zvalue = (z*faktor)+(preZ*(1.0-faktor));
+        preZ=Zvalue;
+        double testZ=preZ*9.56;
+        int outZ=(int) Math.round(testZ);
 
-        z=Math.toDegrees(preX);
-        double pitch = Math.atan(x/Math.sqrt(Math.pow(y,2) + Math.pow(z,2)));
-       // int test=(int) Math.round(preX);
-        textX.setText(Double.toString(test));
-        textY.setText(Double.toString(preY));
+        outX=Math.abs(outX);
+        outY=Math.abs(outY);
+        outZ=Math.abs(outZ);
+        calculateAngle(outX,outY,outZ);
+    }
+
+    private void calculateAngle(int x, int y, int z){
+        if(x>z){
+            textX.setText(Integer.toString(x)+(char) 0x00B0);
+        }else{
+            textX.setText(Integer.toString(z)+(char) 0x00B0);
+        }
+
     }
 
     @Override
     public void onSensorChanged(SensorEvent event) {
         if(event.sensor.getType()==Sensor.TYPE_ACCELEROMETER){
-            x=event.values[0];
-            y=event.values[1];
-            filterData(x,y);
+            switch (display.getRotation()){
+                case Surface.ROTATION_0:
+                    x=event.values[0];
+                    y=event.values[1];
+                    break;
+                case Surface.ROTATION_90:
+                    x=-event.values[1];
+                    y=event.values[0];
+                    break;
+                case Surface.ROTATION_180:
+                    x=-event.values[0];
+                    y=-event.values[1];
+                    break;
+                case Surface.ROTATION_270:
+                    x=event.values[1];
+                    y=-event.values[0];
+                    break;
+            }
+
+            z=event.values[2];
+            filterData(x,y,z);
             //int test=(int) Math.round(z);
             //showToast(Integer.toString(test));
         }
