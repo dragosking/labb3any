@@ -1,11 +1,13 @@
 package com.example.dragos.labb3a;
 
+import android.graphics.Color;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.FloatMath;
 import android.view.Display;
 import android.view.Surface;
 import android.view.WindowManager;
@@ -18,13 +20,17 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private double x,y,z;
     private double preX,preY,preZ;
     private TextView textX,textY,textZ;
+    private double shakePre,shakeAft,shake;
     private Display display;
+    private String color;
+    private int shakeCount;
+    private long timeNow,timeBefore;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+        color="#FF3F51B5";
         display = ((WindowManager) getSystemService(this.WINDOW_SERVICE)).getDefaultDisplay();
 
         textX=(TextView) findViewById(R.id.outputX);
@@ -56,6 +62,28 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         outY=Math.abs(outY);
         outZ=Math.abs(outZ);
         calculateAngle(outX,outY,outZ);
+    }
+
+    private void detectShake(double x, double y, double z){
+        float faktor = 0.01f;
+        shakePre=shakeAft;
+        shakeAft= Math.sqrt((x*x)+(y*y)+(z*z));
+        double del=shakeAft-shakePre;
+        shake=shake*faktor+del;
+        long time=System.currentTimeMillis();
+
+
+        if(shake>20){
+            shakeCount++;
+            if(shakeCount==1){
+                timeBefore=System.currentTimeMillis();
+            }
+            timeNow=System.currentTimeMillis();
+
+            if(timeNow-timeBefore>5000) {
+                textX.setTextColor(Color.parseColor(color));
+            }
+        }
     }
 
     private void calculateAngle(int x, int y, int z){
@@ -90,6 +118,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             }
 
             z=event.values[2];
+            detectShake(x,y,z);
             filterData(x,y,z);
             //int test=(int) Math.round(z);
             //showToast(Integer.toString(test));
