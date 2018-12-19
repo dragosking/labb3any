@@ -74,14 +74,20 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
 
         if(shake>20){
-            shakeCount++;
-            if(shakeCount==1){
-                timeBefore=System.currentTimeMillis();
-            }
-            timeNow=System.currentTimeMillis();
+            if(time-timeNow<1000){
+                shakeCount++;
+                if(shakeCount==1){
+                    timeBefore=System.currentTimeMillis();
+                }
 
-            if(timeNow-timeBefore>5000) {
-                textX.setTextColor(Color.parseColor(color));
+                timeNow=System.currentTimeMillis();
+                if(timeNow-timeBefore>1000) {
+                    textX.setTextColor(Color.parseColor(color));
+                }
+            }else{
+                timeBefore=0;
+                shakeCount=0;
+                timeNow=System.currentTimeMillis();
             }
         }
     }
